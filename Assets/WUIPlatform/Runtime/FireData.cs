@@ -57,7 +57,11 @@ namespace WUIPlatform.Runtime
             WUIEngine.LOG(WUIEngine.LogType.Log, "Loading Fire data...");
 
             LoadLCPFile(Path.Combine(WUIEngine.WORKING_FOLDER, WUIEngine.INPUT.Fire.LcpFile), false);
-            LoadGraphicalFireInput(Path.Combine(WUIEngine.WORKING_FOLDER, WUIEngine.INPUT.Fire.GraphicalFireInputFile), false);
+            string gfiPath = null;
+            if (WUIEngine.INPUT.Fire.GraphicalFireInputFile != null) {
+                gfiPath = Path.Combine(WUIEngine.WORKING_FOLDER, WUIEngine.INPUT.Fire.GraphicalFireInputFile);
+            }
+            LoadGraphicalFireInput(gfiPath, false);
 
             if (WUIEngine.INPUT.Fire.FireModule == FireInput.FireModuleChoice.FireCell)
             {
@@ -197,7 +201,7 @@ namespace WUIPlatform.Runtime
         public bool LoadGraphicalFireInput(string path, bool updateInputFile)
         {
             bool success;
-            GraphicalFireInput.LoadGraphicalFireInput(out success);
+            GraphicalFireInput.LoadGraphicalFireInput(path, out success);
             if (success && updateInputFile)
             {
                 WUIEngine.INPUT.Fire.GraphicalFireInputFile = Path.GetFileName(path);

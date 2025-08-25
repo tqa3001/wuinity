@@ -46,11 +46,10 @@ namespace WUIPlatform
             return result;
         }
 
-        public static void LoadGraphicalFireInput(out bool success)
+        public static void LoadGraphicalFireInput(string path, out bool success)
         {
             success = false;
-            string path = Path.Combine(WUIEngine.WORKING_FOLDER, WUIEngine.INPUT.Fire.GraphicalFireInputFile); //graphical fire input
-
+            
             if(WUIEngine.RUNTIME_DATA.Fire.LCPData == null)
             {
                 WUIEngine.LOG(WUIEngine.LogType.Warning, "No LCP data has been loaded, can't try and look for GFI data.");

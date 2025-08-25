@@ -1,4 +1,7 @@
-﻿using UnityEngine;
+﻿using System;
+using System.IO;
+using UnityEngine;
+using WUIPlatform.IO;
 
 namespace WUIPlatform.WUInity.UI
 {
@@ -87,6 +90,79 @@ namespace WUIPlatform.WUInity.UI
             hideMenu = new MenuButton(buttonHeight, "Hide Menu");
             exitMenu = new MenuButton(buttonHeight, "Exit");
             swapGUI = new MenuButton(buttonHeight, "New GUI");
+
+            /** (Quang) Command-line-parsing support 
+             *
+             * Only support absolute path at the moment
+             * Usage:  WUInityFork.exe --run-with-wui-file <path to wui> 
+             */
+
+            string[] args = Environment.GetCommandLineArgs();
+
+            string wuiFile = null;
+            string popCsv = null;
+
+            for (int i = 0; i < args.Length; i++)
+            {
+                if (args[i] == "--run-with-wui-file" && i + 1 < args.Length)
+                {
+                    wuiFile = args[i + 1];
+                }
+            }
+
+            if (wuiFile != null) 
+            {
+                WUIEngineInput.LoadInput(wuiFile);
+
+                foreach (var line in File.ReadLines(wuiFile))
+                {
+                    if (line.StartsWith("PopulationFile=", StringComparison.OrdinalIgnoreCase))
+                    {
+                        popCsv = line.Substring("PopulationFile=".Length).Trim();
+                        break;
+                    }
+                }
+
+                if (popCsv == null)
+                {
+                    WUIEngine.LOG(WUIEngine.LogType.InputError, "population Csv file not found, aborting");
+                    return;
+                }
+
+                popCsv = Path.Combine(WUIEngine.WORKING_FOLDER, popCsv);
+
+                if (!string.Equals(Path.GetExtension(popCsv), ".csv", StringComparison.OrdinalIgnoreCase))
+                {
+                    WUIEngine.LOG(WUIEngine.LogType.InputError, "PopulationFile is not a .csv, aborting");
+                    return;
+                }
+
+                /** Regenerating population csv every time **/
+
+                string popmapFile = Path.GetFileNameWithoutExtension(popCsv);
+                string suff = "_households";
+                popmapFile = Path.Combine(WUIEngine.WORKING_FOLDER, popmapFile.Substring(0, popmapFile.Length - suff.Length) + ".pop");
+
+                WUIEngine.LOG(WUIEngine.LogType.Log, "Generating population csv from " + popmapFile);
+                if (!File.Exists(popmapFile))
+                {
+                    WUIEngine.LOG(WUIEngine.LogType.InputError, popmapFile + " not found, aborting");
+                    return;
+                }
+                WUIEngine.RUNTIME_DATA.Population.PopulationMap.LoadFromFile(popmapFile);
+                WUIEngine.RUNTIME_DATA.Routing.CreateAndSaveRouterDb(Path.Combine(WUIEngine.WORKING_FOLDER, "map.osm"));
+                if (WUIEngine.RUNTIME_DATA.Routing.LoadRouterDb(Path.Combine(WUIEngine.WORKING_FOLDER, "test.routerdb")))
+                {
+                    WUIEngine.RUNTIME_DATA.Population.PopulationMap.UpdatePopulationMapBasedOnRoadAccess(WUIEngine.RUNTIME_DATA.Routing.Router);
+                }
+                WUIEngine.RUNTIME_DATA.Population.PopulationMap.UpdatePopulationMapBasedOnRoadAccess(WUIEngine.RUNTIME_DATA.Routing.Router);
+                WUIEngine.RUNTIME_DATA.Population.PopulationMap.CreateAndLoadPopulation();
+                
+                /** Run simulation **/
+
+                menuChoice = ActiveMenu.Output; 
+                WUInityEngine.INSTANCE.StartSimulation();
+            }
         }
 
         string[] _log;

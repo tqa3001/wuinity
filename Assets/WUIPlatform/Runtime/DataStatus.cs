@@ -39,7 +39,7 @@ namespace WUIPlatform
             {
                 if (!LcpLoaded)
                 {
-                    canRun = false;
+                    //canRun = false;
                     WUIEngine.LOG(WUIEngine.LogType.SimError, "No LCP file loaded but fire spread is activated.");
                 }
             }
